@@ -289,21 +289,10 @@ game_log ──── (game_id == episode)                              ──�
         <li><strong>CV tuning had almost no effect.</strong> Depth=7 vs depth=5: 64.64% vs 64.53%. The CV curve was flat between depths 5–15.</li>
       </ol>
 
-      <!-- ── 8. Tree vs Q-Table ──────────────────────────────────── -->
-      <h3>8. Tree vs Q-Table Action Comparison</h3>
-      <p>
-        A separate decision tree was trained to predict the Q-table's recommended action (hit / stand / double / split) from just the three state features <code>(player_total, dealer_up, usable_ace)</code>.
-      </p>
-      <p><strong>Agreement with Q-table: 100%</strong></p>
-      <p>
-        The tree perfectly replicates the Q-table policy. This is expected: the Q-table is itself a mapping from the same features to an action — a decision tree over the same inputs can perfectly reproduce any lookup table given enough depth.
-      </p>
-      <p>
-        The policy heatmap (<code>player_total × dealer_up</code>) shows the learned strategy: always hit below ~12 regardless of dealer card, stand on strong totals (18+), and the 13–17 range is the contested zone where dealer card matters.
-      </p>
+ 
 
-      <!-- ── 9. Limitations ─────────────────────────────────────── -->
-      <h3>9. Limitations</h3>
+      <!-- ── 8. Limitations ─────────────────────────────────────── -->
+      <h3>8. Limitations</h3>
 
       <h4>Split Action (Fixed)</h4>
       <p>
