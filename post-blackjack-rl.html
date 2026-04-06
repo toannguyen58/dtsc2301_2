@@ -313,9 +313,13 @@ game_log ──── (game_id == episode)                              ──�
       <p>
         500,000 episodes is sufficient for stand and hit to converge (available every hand). Double is available on every hand's first action, split only when starting cards match — so their Q-values receive fewer updates and converge more slowly. A longer training run would give more reliable double/split recommendations.
       </p>
-
-      <hr style="margin: 1.5rem 0;" />
+      <h4>Win Rate Ceiling Is Determined by the State Space</h4>
       <p>
+        The agent's win rate varies between runs (due to random initialization and stochastic training), but it will never exceed a fixed ceiling determined by the environment's state representation. The state `(player_total, dealer_up, usable_ace, can_split)` is a coarse summary of the game — it discards information such as the true card count, exact card composition, and shoe depth that a skilled human player would use. Because the Q-table can only learn from what it observes, the policy it discovers is upper-bounded by what is recoverable from this state representation alone.
+
+        Adding more state variables (e.g. `true_count`) would expand the state space and could raise the ceiling, but would also require proportionally more training episodes for the Q-table to cover the new states — and tabular Q-learning scales poorly as the state space grows. This is the core trade-off of tabular RL: a richer state enables a better policy, but also demands exponentially more data to converge.
+
+      </p>
         <strong>Full project (code, notebooks, CSV data):</strong>
         <a href="https://github.com/ericnguyen58/BlackJack" target="_blank" rel="noopener">github.com/ericnguyen58/BlackJack</a>
       </p>
