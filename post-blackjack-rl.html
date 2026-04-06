@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blackjack RL — Q-Learning + Supervised Models | Toan Nguyen</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Blog</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="blog.html">Blog</a>
+    </nav>
+  </header>
+
+  <main>
+    <article class="blog-post">
+      <h2>Blackjack Reinforcement Learning — Q-Learning + Decision Tree + Logistic Regression</h2>
+      <p class="date">April 2026</p>
+
+      <p>
+        Full project code, notebooks, and data are available on GitHub:
+        <a href="https://github.com/toannguyen58" target="_blank" rel="noopener">github.com/toannguyen58</a>
+      </p>
+
+      <hr style="margin: 1.5rem 0;" />
+
+      <!-- ── 1. Project Overview ─────────────────────────────────── -->
+      <h3>1. Project Overview</h3>
+      <p>This project builds a blackjack AI in three stages:</p>
+      <ol>
+        <li><strong>Reinforcement learning</strong> — a Q-learning agent learns to play blackjack from scratch using trial and error across 500,000 hands.</li>
+        <li><strong>Logging</strong> — every hand is recorded to disk, capturing the game state, the actions taken, and the outcome.</li>
+        <li><strong>Supervised modeling</strong> — the logged data is used to train a decision tree and a logistic regression classifier to predict hand outcomes, with the Q-table's learned values encoded as features.</li>
+      </ol>
+      <p>The environment is a custom 8-deck shoe with four player actions: stand, hit, double-down, and split.</p>
+      <p>
+        <strong>Why this project?</strong> In blackjack, players face a long-term disadvantage — winning only about 42% of hands, while the dealer wins close to 49%, with the rest resulting in ties. These outcomes are driven by the probabilistic structure of the game under consistent play. This raises a key question: can an agent, learning purely through trial and error, discover a strategy that improves upon these baseline outcomes?
+      </p>
+
+      <!-- ── 2. Environment Design ───────────────────────────────── -->
+      <h3>2. Environment Design</h3>
+
+      <h4>The Shoe</h4>
+      <p>
+        Eight standard 52-card decks are shuffled together into a 416-card shoe. When fewer than 104 cards remain (~25%), the shoe reshuffles. This simulates real casino conditions where the shoe is never fully depleted before reshuffling.
+      </p>
+
+      <h4>State Representation</h4>
+      <p>At any point in a hand, the agent observes a 4-tuple:</p>
+      <pre><code>state = (player_total, dealer_up_card, usable_ace, can_split)</code></pre>
+      <table>
+        <thead><tr><th>Component</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>player_total</code></td><td>Optimal sum of the player's hand (aces counted as 11 if it doesn't bust)</td></tr>
+          <tr><td><code>dealer_up_card</code></td><td>Numeric value of the dealer's one face-up card (2–10, A=1)</td></tr>
+          <tr><td><code>usable_ace</code></td><td><code>True</code> if the player holds an ace currently counted as 11 (soft hand)</td></tr>
+          <tr><td><code>can_split</code></td><td><code>True</code> if this is the first action and both starting cards share the same point value</td></tr>
+        </tbody>
+      </table>
+      <p>This is a <strong>discrete, finite state space.</strong> After 500,000 episodes the agent had encountered exactly <strong>360 unique states.</strong></p>
+
+      <h4>Actions</h4>
+      <table>
+        <thead><tr><th>Code</th><th>Name</th><th>Rule</th><th>Reward</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code></td><td>Stand</td><td>Stop; dealer plays out</td><td>±1 or 0</td></tr>
+          <tr><td><code>1</code></td><td>Hit</td><td>Draw one card</td><td>±1 on terminal (0 if continuing)</td></tr>
+          <tr><td><code>2</code></td><td>Double-down</td><td>First action only — draw exactly one card, then stand</td><td>±2 (doubled stake)</td></tr>
+          <tr><td><code>3</code></td><td>Split</td><td>First action only, same-value starting cards — split into two hands</td><td>Sum of both outcomes (−2 to +2)</td></tr>
+        </tbody>
+      </table>
+      <p>Double-down and split are only offered when they are legally available. The environment exposes <code>env.valid_actions()</code> at every step, and the agent's action selection is restricted to that list.</p>
+
+      <h4>Dealer Rule</h4>
+      <p>The dealer hits until reaching a hard or soft total of 17 or more, then stands (standard casino S17 rule).</p>
+
+      <!-- ── 3. Q-Learning Agent ─────────────────────────────────── -->
+      <h3>3. Q-Learning Agent</h3>
+
+      <h4>What Q-Learning Does</h4>
+      <p>
+        Q-learning is a model-free reinforcement learning algorithm. The agent does not know the rules of blackjack in advance — it discovers a strategy purely through experience. After taking an action, it observes the reward and updates its internal table of expected values using the <strong>Bellman equation</strong>:
+      </p>
+      <pre><code>Q(s, a)  ←  Q(s, a)  +  α · [ r  +  γ · max Q(s')  −  Q(s, a) ]</code></pre>
+      <p>Each term has a specific role:</p>
+      <ul>
+        <li><code>Q(s, a)</code> — current estimate of how good action <code>a</code> is in state <code>s</code>.</li>
+        <li><code>r</code> — immediate reward received after taking the action.</li>
+        <li><code>γ · max Q(s')</code> — discounted value of the best possible action from the next state (0 for terminal states).</li>
+        <li><code>α</code> — controls how aggressively the estimate is updated.</li>
+      </ul>
+
+      <h4>The Q-Table</h4>
+      <p>The Q-table is a dictionary:</p>
+      <pre><code>Q[(player_total, dealer_up, usable_ace, can_split)] = [stand_value, hit_value, double_value, split_value]</code></pre>
+      <p>
+        <strong>Optimistic initialization:</strong> every state starts at <code>[1.0, 1.0, 1.0, 1.0]</code>. This forces the agent to try every action in every state at least once before settling — because an untried action looks better than a tried-and-failed one.
+      </p>
+
+      <h4>Exploration vs Exploitation (Epsilon-Greedy)</h4>
+      <p>
+        <strong>Epsilon (ε)</strong> controls the exploration/exploitation tradeoff. With probability ε the agent takes a random valid action (explore); otherwise it picks the highest-value valid action (exploit).
+      </p>
+      <p>Epsilon decays exponentially toward a floor of 0.1:</p>
+      <pre><code>ε  =  ε_min  +  (ε_start − ε_min) · e^(−decay_rate × episode)</code></pre>
+      <p>With <code>decay_rate = 0.0001</code> over 500,000 episodes, epsilon reaches its floor after roughly episode 428, giving the agent ~499,572 episodes of near-greedy exploitation. The floor of 0.1 ensures the agent never completely stops exploring.</p>
+
+      <h4>Hyperparameters</h4>
+      <table>
+        <thead><tr><th>Parameter</th><th>Value</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><code>alpha</code> (α)</td><td>0.2</td><td>Learning rate — how fast Q-values update per observation</td></tr>
+          <tr><td><code>gamma</code> (γ)</td><td>0.9</td><td>Discount factor — how much future reward matters vs immediate</td></tr>
+          <tr><td><code>epsilon</code></td><td>1.0 → 0.1</td><td>Exploration rate — decays exponentially</td></tr>
+          <tr><td><code>epsilon_min</code></td><td>0.1</td><td>Minimum exploration floor</td></tr>
+          <tr><td><code>decay_rate</code></td><td>0.0001</td><td>Speed of epsilon decay</td></tr>
+          <tr><td><code>n_episodes</code></td><td>500,000</td><td>Total training hands</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ── 4. Training Results ─────────────────────────────────── -->
+      <h3>4. Training Results</h3>
+
+      <h4>Convergence</h4>
+      <table>
+        <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Total episodes</td><td>500,000</td></tr>
+          <tr><td>Unique states discovered</td><td><strong>360</strong></td></tr>
+          <tr><td>Final rolling avg reward (last 100 episodes)</td><td><strong>−0.15</strong></td></tr>
+          <tr><td>Final mean stand Q-value</td><td>−0.16</td></tr>
+          <tr><td>Final mean hit Q-value</td><td>+0.37</td></tr>
+          <tr><td>Final mean double Q-value</td><td>−0.49</td></tr>
+          <tr><td>Final mean split Q-value</td><td>+0.57</td></tr>
+        </tbody>
+      </table>
+      <p>
+        The rolling average reward stabilizing at <strong>−0.15</strong> is the core convergence signal. It reflects the true house edge — the agent has learned a near-optimal strategy but cannot overcome the inherent dealer advantage.
+      </p>
+
+      <h4>What the Agent Learned</h4>
+      <pre><code>Best action distribution across 360 states:
+
+  hit       280  (77.8%)
+  stand      53  (14.7%)
+  double     25   (6.9%)
+  split       2   (0.6%)</code></pre>
+      <p>
+        <strong>Hit (280 states)</strong> is the dominant recommendation — the agent learned that hitting generally gives a better expected outcome across the broad range of mid-to-low totals a player can find themselves in.
+      </p>
+      <p>
+        <strong>Stand (53 states)</strong> is recommended when the player total is strong enough to compete — typically 17+ or when the dealer shows a weak card.
+      </p>
+      <p>
+        <strong>Double (25 states)</strong> is recommended in specific high-value spots, typically player totals of 10 or 11 against a weak dealer up card.
+      </p>
+      <p>
+        <strong>Split (2 states)</strong> is now correctly rare. Adding <code>can_split</code> as a 4th state dimension ensures split Q-values only converge on hands where the action is actually legal.
+      </p>
+
+      <h4>Game Log Summary (500,000 Hands)</h4>
+      <table>
+        <thead><tr><th>Outcome</th><th>Count</th><th>Rate</th></tr></thead>
+        <tbody>
+          <tr><td>LOSE</td><td>257,347</td><td>51.5%</td></tr>
+          <tr><td>WIN</td><td>176,405</td><td>35.3%</td></tr>
+          <tr><td>PUSH</td><td>42,993</td><td>8.6%</td></tr>
+          <tr><td>LOSE(x2)</td><td>15,027</td><td>3.0%</td></tr>
+          <tr><td>WIN(x2)</td><td>8,228</td><td>1.6%</td></tr>
+        </tbody>
+      </table>
+      <p>
+        The <strong>36.9% win rate</strong> (WIN + WIN(x2): 184,633 / 500,000) is below the theoretical ~42–44% in basic strategy blackjack. The gap comes from the early high-epsilon phase where the agent played randomly and accumulated losses.
+      </p>
+      <table>
+        <thead><tr><th>Last Action</th><th>Count</th></tr></thead>
+        <tbody>
+          <tr><td>stand</td><td>330,439</td></tr>
+          <tr><td>hit</td><td>143,951</td></tr>
+          <tr><td>double</td><td>21,295</td></tr>
+          <tr><td>split</td><td>4,315</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ── 5. Dataset Construction ─────────────────────────────── -->
+      <h3>5. Dataset Construction</h3>
+      <p>The supervised model dataset is built by joining all three output files on their shared keys:</p>
+      <pre><code>game_log ──── (player_total, dealer_up, usable_ace, can_split) ──▶ q_table      → stand/hit/double/split values
+game_log ──── (game_id == episode)                              ──▶ training_log → epsilon, rolling_avg_reward</code></pre>
+
+      <h4>Features</h4>
+      <table>
+        <thead><tr><th>Feature</th><th>Source</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>player_total</code></td><td>game_log</td><td>numeric</td><td>Player's hand total at time of last action</td></tr>
+          <tr><td><code>dealer_up_card</code></td><td>game_log</td><td>numeric (1–10)</td><td>Dealer's visible card</td></tr>
+          <tr><td><code>player_usable_ace</code></td><td>game_log</td><td>binary</td><td>Whether the player holds a soft ace</td></tr>
+          <tr><td><code>can_split</code></td><td>game_log</td><td>binary</td><td>Whether split was available at the start of the hand</td></tr>
+          <tr><td><code>cards_remaining</code></td><td>game_log</td><td>numeric</td><td>Cards left in the shoe</td></tr>
+          <tr><td><code>stand_value</code></td><td>q_table</td><td>float</td><td>Q-table's learned expected value of standing</td></tr>
+          <tr><td><code>hit_value</code></td><td>q_table</td><td>float</td><td>Q-table's learned expected value of hitting</td></tr>
+          <tr><td><code>double_value</code></td><td>q_table</td><td>float</td><td>Q-table's learned expected value of doubling</td></tr>
+          <tr><td><code>split_value</code></td><td>q_table</td><td>float</td><td>Q-table's learned expected value of splitting</td></tr>
+          <tr><td><code>epsilon</code></td><td>training_log</td><td>float</td><td>Exploration rate when this hand was played</td></tr>
+        </tbody>
+      </table>
+      <p>
+        <strong>Target:</strong> <code>result</code> normalized to 3 classes — WIN, LOSE, PUSH. Double-down results (WIN(x2), LOSE(x2)) are mapped to their corresponding win/lose class.
+      </p>
+      <p><strong>Dataset size:</strong> 338,126 rows × 10 features after dropping rows with missing Q-table joins.</p>
+
+      <!-- ── 6. Supervised Models ────────────────────────────────── -->
+      <h3>6. Supervised Models</h3>
+
+      <h4>6.1 Decision Tree</h4>
+      <p>
+        A <code>DecisionTreeClassifier</code> is trained to predict hand outcome from the feature set above. The tree is interpretable — you can trace exactly why a hand was classified WIN or LOSE — and handles the mix of continuous Q-values and discrete game state naturally without scaling.
+      </p>
+      <p>
+        <strong>Depth tuning via 5-fold cross-validation (depths 1–20):</strong>
+      </p>
+      <table>
+        <thead><tr><th>Depth</th><th>CV Accuracy</th></tr></thead>
+        <tbody>
+          <tr><td><strong>7 (best)</strong></td><td><strong>0.6469</strong></td></tr>
+          <tr><td>5 (baseline)</td><td>—</td></tr>
+          <tr><td>10+</td><td>diminishing returns / overfitting</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Best depth: <strong>7</strong> (test accuracy 64.64% vs baseline depth=5 at 64.53%). The gain is marginal — the CV curve was flat across depths 5–15, confirming the predictive signal is exhausted after just a few splits.
+      </p>
+      <p><code>player_total</code> is the dominant feature. Q-table values (<code>stand_value</code>, <code>hit_value</code>, etc.) contribute meaningfully at deeper splits. See the feature importance chart in the notebook for exact percentages.</p>
+
+      <h4>6.2 Random Forest</h4>
+      <p>A <code>RandomForestClassifier</code> (100 estimators) trained on the same feature set. Ensembles many shallow trees to reduce variance. Interestingly, it is the only model that predicts PUSH at all (9% recall, F1=0.13).</p>
+
+      <h4>6.3 Logistic Regression</h4>
+      <p>A linear baseline trained after standardizing all features with <code>StandardScaler</code>. Outputs calibrated probabilities. If the tree significantly outperforms it, that confirms the decision boundary is non-linear.</p>
+
+      <!-- ── 7. Model Comparison ─────────────────────────────────── -->
+      <h3>7. Model Comparison</h3>
+
+      <h4>Accuracy</h4>
+      <table>
+        <thead><tr><th>Model</th><th>Test Accuracy</th></tr></thead>
+        <tbody>
+          <tr><td>Decision Tree (depth=7, CV-tuned)</td><td>64.64%</td></tr>
+          <tr><td>Decision Tree (depth=5, baseline)</td><td>64.53%</td></tr>
+          <tr><td>Logistic Regression</td><td>63.35%</td></tr>
+          <tr><td>Random Forest (100 estimators)</td><td>61.21%</td></tr>
+          <tr><td>Random baseline (3 classes)</td><td>~33.3%</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Per-Class Performance — Decision Tree (depth=7)</h4>
+      <table>
+        <thead><tr><th>Class</th><th>Precision</th><th>Recall</th><th>F1</th><th>Support</th></tr></thead>
+        <tbody>
+          <tr><td>LOSE</td><td>0.59</td><td>0.77</td><td>0.67</td><td>23,373</td></tr>
+          <tr><td>PUSH</td><td>0.16</td><td>0.00</td><td>0.00</td><td>8,333</td></tr>
+          <tr><td>WIN</td><td>0.70</td><td>0.71</td><td>0.71</td><td>35,920</td></tr>
+          <tr><td><strong>weighted avg</strong></td><td><strong>0.59</strong></td><td><strong>0.65</strong></td><td><strong>0.61</strong></td><td></td></tr>
+        </tbody>
+      </table>
+
+      <h4>Per-Class Performance — Logistic Regression</h4>
+      <table>
+        <thead><tr><th>Class</th><th>Precision</th><th>Recall</th><th>F1</th><th>Support</th></tr></thead>
+        <tbody>
+          <tr><td>LOSE</td><td>0.59</td><td>0.70</td><td>0.64</td><td>23,373</td></tr>
+          <tr><td>PUSH</td><td>0.00</td><td>0.00</td><td>0.00</td><td>8,333</td></tr>
+          <tr><td>WIN</td><td>0.66</td><td>0.74</td><td>0.70</td><td>35,920</td></tr>
+          <tr><td><strong>weighted avg</strong></td><td><strong>0.56</strong></td><td><strong>0.63</strong></td><td><strong>0.59</strong></td><td></td></tr>
+        </tbody>
+      </table>
+
+      <h4>Key Observations</h4>
+      <ol>
+        <li><strong>PUSH is essentially unpredictable.</strong> All models give up on predicting PUSH (F1 ≈ 0.00). A push requires the player's final total to exactly equal the dealer's final total — an outcome that depends on the dealer's hidden card and future draws, information not in the feature set.</li>
+        <li><strong>The tree predicts LOSE with higher recall.</strong> 77% recall on LOSE vs 70% for logistic regression. Threshold-based splits like <code>player_total &lt; 12</code> capture near-certain losing hands cleanly.</li>
+        <li><strong>Logistic regression handles WIN better.</strong> 74% recall on WIN — the decision boundary for winning hands is more linearly separable (high player total + weak dealer card = WIN).</li>
+        <li><strong>The accuracy ceiling is around 64–65%.</strong> The remaining ~35% loss comes from unpredictable pushes and inherent outcome randomness — two identical visible states can have different outcomes depending on the dealer's hidden card.</li>
+        <li><strong>Random Forest underperforms but recovers partial PUSH signal.</strong> At 61.2%, it trails the single tree and logistic regression. However, it is the only model that predicts PUSH at all (9% recall, F1=0.13) — ensemble averaging picks up some minority-class signal that single-threshold models miss.</li>
+        <li><strong>CV tuning had almost no effect.</strong> Depth=7 vs depth=5: 64.64% vs 64.53%. The CV curve was flat between depths 5–15.</li>
+      </ol>
+
+      <!-- ── 8. Tree vs Q-Table ──────────────────────────────────── -->
+      <h3>8. Tree vs Q-Table Action Comparison</h3>
+      <p>
+        A separate decision tree was trained to predict the Q-table's recommended action (hit / stand / double / split) from just the three state features <code>(player_total, dealer_up, usable_ace)</code>.
+      </p>
+      <p><strong>Agreement with Q-table: 100%</strong></p>
+      <p>
+        The tree perfectly replicates the Q-table policy. This is expected: the Q-table is itself a mapping from the same features to an action — a decision tree over the same inputs can perfectly reproduce any lookup table given enough depth.
+      </p>
+      <p>
+        The policy heatmap (<code>player_total × dealer_up</code>) shows the learned strategy: always hit below ~12 regardless of dealer card, stand on strong totals (18+), and the 13–17 range is the contested zone where dealer card matters.
+      </p>
+
+      <!-- ── 9. Limitations ─────────────────────────────────────── -->
+      <h3>9. Limitations</h3>
+
+      <h4>Split Action (Fixed)</h4>
+      <p>
+        Adding <code>can_split</code> as a 4th state dimension fixed a prior artifact where split was over-recommended. After retraining, split is recommended in only <strong>2 of 360 states (0.6%)</strong>, down from 173 states in earlier runs.
+      </p>
+
+      <h4>PUSH Is Not Predictable</h4>
+      <p>
+        The supervised models cannot reliably predict pushes. This is a structural limitation — the dealer's hidden card and future draws are unknown at decision time. A model would need the dealer's full hand to predict pushes, which defeats the purpose of prediction.
+      </p>
+
+      <h4>Reward Scale Inconsistency</h4>
+      <p>
+        Double-down uses ±2 rewards while stand and hit use ±1. The Q-table's <code>double_value</code> entries live on a different scale. On a normalized basis (÷2), the double mean is approximately −0.25, consistent with the other actions. This also inflates the negative <code>mean_double_value</code> statistic.
+      </p>
+
+      <h4>Training Volume for New Actions</h4>
+      <p>
+        500,000 episodes is sufficient for stand and hit to converge (available every hand). Double is available on every hand's first action, split only when starting cards match — so their Q-values receive fewer updates and converge more slowly. A longer training run would give more reliable double/split recommendations.
+      </p>
+
+      <hr style="margin: 1.5rem 0;" />
+      <p>
+        <strong>Full project (code, notebooks, CSV data):</strong>
+        <a href="https://github.com/toannguyen58" target="_blank" rel="noopener">github.com/toannguyen58</a>
+      </p>
+
+    </article>
+  </main>
+
+  <footer>
+    <p>© 2026 Toan Nguyen</p>
+  </footer>
+
+</body>
+</html>
