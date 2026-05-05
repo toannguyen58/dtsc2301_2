@@ -3,76 +3,182 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Toan Nguyen | Portfolio</title>
+  <title>Toan Nguyen | Data Science Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <header>
-    <h1>Toan Nguyen</h1>
-    <p>Data Science Student | Aspiring Data Scientist</p>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="blog.html">Blog</a>
-    </nav>
+  <header class="site-header">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">Toan Nguyen</a>
+      <nav>
+        <a href="#about">About</a>
+        <a href="#skills">Skills</a>
+        <a href="#portfolio">Projects</a>
+        <a href="blog.html">Blog</a>
+      </nav>
+    </div>
   </header>
 
+  <!-- ── HERO ──────────────────────────────────────────────── -->
+  <section class="hero">
+    <span class="hero-tag">Data Science Student</span>
+    <h1>Hi, I'm <span class="accent">Toan Nguyen</span></h1>
+    <p>
+      I build data systems that tell honest stories — from economic early-warning
+      models to reinforcement-learning agents that learn from scratch.
+    </p>
+    <div class="hero-cta">
+      <a href="#portfolio" class="btn btn-primary">View Projects</a>
+      <a href="blog.html" class="btn btn-outline">Read the Blog</a>
+    </div>
+  </section>
+
   <main>
-    <!-- ABOUT ME -->
+
+    <!-- ── ABOUT ────────────────────────────────────────────── -->
     <section id="about">
-      <h2>About Me</h2>
-      <p>
-        Hi, I’m Toan Nguyen. I’m a Data Science student interested in how data,
-        technology, and society interact. I enjoy working with data,
-        programming, and learning how technical decisions can impact real
-        people.
-      </p>
+      <div class="section-label">About</div>
+      <h2>Who I Am</h2>
+      <div class="about-grid">
+
+        <div class="about-text fade-up">
+          <p>
+            I'm a Data Science student fascinated by how data, technology, and society intersect.
+            My work lives at the boundary of rigorous methodology and plain-English communication
+            — I care deeply about building models that are honest about what they can and can't do.
+          </p>
+          <p>
+            My projects span economics, reinforcement learning, and behavioral analysis. Each one
+            includes a frank limitations section, because a model that hides its weaknesses is
+            ultimately not useful to anyone.
+          </p>
+        </div>
+
+        <div class="stat-row fade-up">
+          <div class="stat">
+            <div class="stat-num">9 / 9</div>
+            <div class="stat-desc">US recessions detected by The Siren (3 fully out-of-sample, every one with 6 months of lead time)</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">500 k</div>
+            <div class="stat-desc">Blackjack hands trained across a custom RL environment with double-down and split</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">60 + yrs</div>
+            <div class="stat-desc">of US economic history modeled across three walk-forward validation folds</div>
+          </div>
+        </div>
+
+      </div>
     </section>
 
-    <!-- PORTFOLIO -->
+    <!-- ── SKILLS ────────────────────────────────────────────── -->
+    <section id="skills">
+      <div class="section-label">Skills</div>
+      <h2>Tech Stack</h2>
+      <div class="tag-cloud fade-up">
+        <span class="tag">Python</span>
+        <span class="tag">XGBoost</span>
+        <span class="tag">scikit-learn</span>
+        <span class="tag">pandas</span>
+        <span class="tag">NumPy</span>
+        <span class="tag">SHAP</span>
+        <span class="tag">Matplotlib</span>
+        <span class="tag">Reinforcement Learning</span>
+        <span class="tag">Machine Learning</span>
+        <span class="tag">Time-Series Modeling</span>
+        <span class="tag tag-gray">SQL</span>
+        <span class="tag tag-gray">Git</span>
+        <span class="tag tag-gray">HTML / CSS</span>
+        <span class="tag tag-gray">Jupyter</span>
+      </div>
+    </section>
+
+    <!-- ── PORTFOLIO ─────────────────────────────────────────── -->
     <section id="portfolio">
-      <h2>Portfolio / Projects</h2>
-      <p>This section will be updated throughout the semester.</p>
+      <div class="section-label">Work</div>
+      <h2>Projects</h2>
+      <div class="cards-grid">
 
-      <div class="project-card">
-        <h3>Blackjack RL — Q-Learning + Supervised Models</h3>
-        <p>
-          A Q-learning agent trained on a custom 8-deck blackjack environment across 500,000 episodes.
-          The agent's logged gameplay is then used to train decision tree, random forest, and logistic
-          regression classifiers to predict hand outcomes, with the Q-table's learned values as features.
-        </p>
-        <a href="post-blackjack-rl.html" class="project-link">Read more →</a>
-      </div>
+        <div class="project-card fade-up">
+          <div class="card-tags">
+            <span class="tag tag-sm">Machine Learning</span>
+            <span class="tag tag-sm">Time Series</span>
+          </div>
+          <h3>The Siren — Recession Early Warning System</h3>
+          <p>
+            A 9-feature XGBoost pipeline watching 60 years of US economic data.
+            Walk-forward validation, Platt calibration, F-beta threshold tuning,
+            and SHAP explainability. Caught 3/3 out-of-sample recessions with 6 months of lead time.
+          </p>
+          <a href="post-siren.html" class="project-link">Read more →</a>
+        </div>
 
-      <div class="project-card">
-        <h3>Driver Behavior Analysis — EDA</h3>
-        <p>
-          Exploratory data analysis on a 30,000-row sensor dataset capturing aggressive,
-          distracted, and normal driving behavior. Identifies which sensor signals — speed,
-          brake pressure, lane deviation, reaction time — best distinguish each group, and
-          examines the limits of phone usage as a standalone distraction indicator.
-        </p>
-        <a href="post-driver-behavior.html" class="project-link">Read more →</a>
-      </div>
+        <div class="project-card fade-up">
+          <div class="card-tags">
+            <span class="tag tag-sm">Reinforcement Learning</span>
+            <span class="tag tag-sm">Supervised ML</span>
+          </div>
+          <h3>Blackjack RL — Q-Learning + Supervised Models</h3>
+          <p>
+            A Q-learning agent trained across 500,000 hands of custom 8-deck blackjack
+            with double-down and split. Logged gameplay feeds decision tree and logistic
+            regression classifiers that use Q-values as features.
+          </p>
+          <a href="post-blackjack-rl.html" class="project-link">Read more →</a>
+        </div>
 
-      <div class="project-card">
-        <h3>Ethically Ambiguous Data Modeling</h3>
-        <p>
-          This project explores ethically ambiguous data modeling, focusing on how
-          biased data and proxy variables can lead to unintended social consequences
-          even when models perform well technically.
-        </p>
-        
-      
-        <a href="post-ethics.html" class="project-link">Read more →</a>
+        <div class="project-card fade-up">
+          <div class="card-tags">
+            <span class="tag tag-sm">EDA</span>
+            <span class="tag tag-sm">Sensor Data</span>
+          </div>
+          <h3>Driver Behavior Analysis — EDA</h3>
+          <p>
+            What sensor signals distinguish aggressive, distracted, and normal driving?
+            An exploratory analysis on 30,000 OBD sensor readings across speed, brake
+            pressure, lane deviation, and reaction time.
+          </p>
+          <a href="post-driver-behavior.html" class="project-link">Read more →</a>
+        </div>
+
+        <div class="project-card fade-up">
+          <div class="card-tags">
+            <span class="tag tag-sm">Ethics</span>
+            <span class="tag tag-sm">Data Science</span>
+          </div>
+          <h3>Ethically Ambiguous Data Modeling</h3>
+          <p>
+            Technical success doesn't guarantee fair outcomes. A reflection on biased
+            datasets, proxy variables, and responsible modeling practice — and why the
+            ambiguity is rarely a sign of bad intent.
+          </p>
+          <a href="post-ethics.html" class="project-link">Read more →</a>
+        </div>
+
       </div>
-      
-      
+    </section>
+
   </main>
 
   <footer>
-    <p>© 2026 Toan Nguyen</p>
+    <p>
+      © 2026 Toan Nguyen &nbsp;·&nbsp;
+      <a href="https://github.com/ericnguyen58" target="_blank" rel="noopener">GitHub</a>
+    </p>
   </footer>
+
+  <script>
+    const io = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+      { threshold: 0.1 }
+    );
+    document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
+  </script>
 
 </body>
 </html>

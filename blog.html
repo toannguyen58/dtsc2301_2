@@ -4,56 +4,120 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Blog | Toan Nguyen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <header>
-    <h1>Blog</h1>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="blog.html">Blog</a>
-    </nav>
+  <header class="site-header">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">Toan Nguyen</a>
+      <nav>
+        <a href="index.html#about">About</a>
+        <a href="index.html#skills">Skills</a>
+        <a href="index.html#portfolio">Projects</a>
+        <a href="blog.html">Blog</a>
+      </nav>
+    </div>
   </header>
 
-  <main>
-    <div class="project-card">
-      <h3>Blackjack RL — Q-Learning + Decision Tree + Logistic Regression</h3>
-      <p class="date">April 2026</p>
-      <p>
-        A reinforcement learning agent trained on a custom 8-deck blackjack environment across 500,000 episodes,
-        followed by supervised modeling (decision tree, random forest, logistic regression) to predict hand outcomes
-        from logged gameplay data and learned Q-values.
-      </p>
-      <a href="post-blackjack-rl.html" class="project-link">Read more →</a>
-    </div>
+  <main style="padding-top: 3.5rem; padding-bottom: 5rem;">
+    <div class="section-label">Writing</div>
+    <h2 style="margin-bottom: 0.35rem;">Blog</h2>
+    <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0;">
+      Project write-ups, technical notes, and reflections on data science practice.
+    </p>
 
-    <div class="project-card">
-      <h3>Driver Behavior Analysis — Exploratory Data Analysis</h3>
-      <p class="date">February 2026</p>
-      <p>
-        What sensor signals most clearly distinguish aggressive, distracted, and normal driving?
-        An EDA on 30,000 OBD sensor readings using speed, brake pressure, lane deviation,
-        and reaction time to profile each behavior group.
-      </p>
-      <a href="post-driver-behavior.html" class="project-link">Read more →</a>
-    </div>
+    <div class="blog-list">
 
-    <div class="project-card">
-      <h3>Ethically Ambiguous Data Modeling</h3>
-      <p class="date">January 2026</p>
-      <p>
-        Most data models operate in ethically ambiguous spaces — where technical success
-        does not guarantee fair or equitable outcomes. A reflection on biased datasets,
-        proxy variables, and responsible modeling practice.
-      </p>
-      <a href="post-ethics.html" class="project-link">Read more →</a>
+      <a href="post-siren.html" class="blog-card fade-up">
+        <div class="blog-card-body">
+          <div class="blog-card-meta">
+            <span class="blog-card-date">May 2026</span>
+            <span class="tag tag-sm">Machine Learning</span>
+            <span class="tag tag-sm">Time Series</span>
+          </div>
+          <h3>The Siren — US Recession Early Warning System</h3>
+          <p>
+            A machine learning pipeline that watches 9 economic indicators monthly and outputs a
+            recession probability for the next 6 months. XGBoost, walk-forward validation, Platt
+            calibration, and SHAP explainability — catching 3/3 out-of-sample recessions with 6
+            months of lead time each.
+          </p>
+        </div>
+        <span class="blog-card-arrow">→</span>
+      </a>
+
+      <a href="post-blackjack-rl.html" class="blog-card fade-up">
+        <div class="blog-card-body">
+          <div class="blog-card-meta">
+            <span class="blog-card-date">April 2026</span>
+            <span class="tag tag-sm">Reinforcement Learning</span>
+            <span class="tag tag-sm">Supervised ML</span>
+          </div>
+          <h3>Blackjack RL — Q-Learning + Decision Tree + Logistic Regression</h3>
+          <p>
+            A reinforcement learning agent trained on a custom 8-deck blackjack environment across
+            500,000 episodes, followed by supervised modeling to predict hand outcomes from logged
+            gameplay data and learned Q-values.
+          </p>
+        </div>
+        <span class="blog-card-arrow">→</span>
+      </a>
+
+      <a href="post-driver-behavior.html" class="blog-card fade-up">
+        <div class="blog-card-body">
+          <div class="blog-card-meta">
+            <span class="blog-card-date">February 2026</span>
+            <span class="tag tag-sm">EDA</span>
+            <span class="tag tag-sm">Sensor Data</span>
+          </div>
+          <h3>Driver Behavior Analysis — Exploratory Data Analysis</h3>
+          <p>
+            What sensor signals most clearly distinguish aggressive, distracted, and normal driving?
+            An EDA on 30,000 OBD sensor readings using speed, brake pressure, lane deviation,
+            and reaction time to profile each behavior group.
+          </p>
+        </div>
+        <span class="blog-card-arrow">→</span>
+      </a>
+
+      <a href="post-ethics.html" class="blog-card fade-up">
+        <div class="blog-card-body">
+          <div class="blog-card-meta">
+            <span class="blog-card-date">January 2026</span>
+            <span class="tag tag-sm">Ethics</span>
+            <span class="tag tag-sm">Data Science</span>
+          </div>
+          <h3>Ethically Ambiguous Data Modeling</h3>
+          <p>
+            Most data models operate in ethically ambiguous spaces — where technical success
+            does not guarantee fair or equitable outcomes. A reflection on biased datasets,
+            proxy variables, and responsible modeling practice.
+          </p>
+        </div>
+        <span class="blog-card-arrow">→</span>
+      </a>
+
     </div>
   </main>
 
   <footer>
-    <p>© 2026 Toan Nguyen</p>
+    <p>
+      © 2026 Toan Nguyen &nbsp;·&nbsp;
+      <a href="https://github.com/ericnguyen58" target="_blank" rel="noopener">GitHub</a>
+    </p>
   </footer>
+
+  <script>
+    const io = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+      { threshold: 0.1 }
+    );
+    document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
+  </script>
 
 </body>
 </html>

@@ -4,22 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Driver Behavior Analysis — EDA | Toan Nguyen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <header>
-    <h1>Blog</h1>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="blog.html">Blog</a>
-    </nav>
+  <header class="site-header">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">Toan Nguyen</a>
+      <nav>
+        <a href="index.html#about">About</a>
+        <a href="index.html#portfolio">Projects</a>
+        <a href="blog.html">Blog</a>
+      </nav>
+    </div>
   </header>
 
-  <main>
+  <div class="post-wrap">
+    <a href="blog.html" class="post-back">← Back to Blog</a>
     <article class="blog-post">
-      <h2>Driver Behavior Analysis — Exploratory Data Analysis</h2>
-      <p class="date">February 2026</p>
+      <div class="post-header">
+        <h2>Driver Behavior Analysis — Exploratory Data Analysis</h2>
+        <p class="date">February 2026</p>
+      </div>
 
       <p>
         I chose this topic partly because of my interest in automotive subjects. I am currently
@@ -117,10 +126,13 @@
         <a href="eda.pdf" class="project-link" target="_blank">Download full EDA notebook (PDF) →</a>
       </p>
     </article>
-  </main>
+  </div>
 
   <footer>
-    <p>© 2026 Toan Nguyen</p>
+    <p>
+      © 2026 Toan Nguyen &nbsp;·&nbsp;
+      <a href="https://github.com/ericnguyen58" target="_blank" rel="noopener">GitHub</a>
+    </p>
   </footer>
 
 </body>

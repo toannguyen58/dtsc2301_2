@@ -4,22 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ethically Ambiguous Data Modeling | Toan Nguyen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <header>
-    <h1>Blog</h1>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="blog.html">Blog</a>
-    </nav>
+  <header class="site-header">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">Toan Nguyen</a>
+      <nav>
+        <a href="index.html#about">About</a>
+        <a href="index.html#portfolio">Projects</a>
+        <a href="blog.html">Blog</a>
+      </nav>
+    </div>
   </header>
 
-  <main>
+  <div class="post-wrap">
+    <a href="blog.html" class="post-back">← Back to Blog</a>
     <article class="blog-post">
-      <h2>Ethically Ambiguous Data Modeling</h2>
-      <p class="date">January 2026</p>
+      <div class="post-header">
+        <h2>Ethically Ambiguous Data Modeling</h2>
+        <p class="date">January 2026</p>
+      </div>
 
       <p>
         Data modeling can be defined as a technical activity where data is collected
@@ -65,10 +74,13 @@
         answer and more about understanding the ambiguity in the process.
       </p>
     </article>
-  </main>
+  </div>
 
   <footer>
-    <p>© 2026 Toan Nguyen</p>
+    <p>
+      © 2026 Toan Nguyen &nbsp;·&nbsp;
+      <a href="https://github.com/ericnguyen58" target="_blank" rel="noopener">GitHub</a>
+    </p>
   </footer>
 
 </body>

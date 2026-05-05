@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Siren — US Recession Early Warning System | Toan Nguyen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">Toan Nguyen</a>
+      <nav>
+        <a href="index.html#about">About</a>
+        <a href="index.html#portfolio">Projects</a>
+        <a href="blog.html">Blog</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="post-wrap">
+    <a href="blog.html" class="post-back">← Back to Blog</a>
+    <article class="blog-post">
+      <div class="post-header">
+        <h2>The Siren — US Recession Early Warning System</h2>
+        <p class="date">May 2026</p>
+      </div>
+
+      <p>
+        Full project code, pipeline, and output charts are available on GitHub:
+        <a href="https://github.com/ericnguyen58/chess-end-to-end" target="_blank" rel="noopener">https://github.com/ericnguyen58/chess-end-to-end</a>
+      </p>
+
+      <hr style="margin: 1.5rem 0;" />
+
+      <!-- ── 1. Project Overview ─────────────────────────────────── -->
+      <h3>1. Project Overview</h3>
+      <p>
+        The Siren is an early-warning system for US recessions. It watches 9 economic indicators every month and
+        outputs a single number — the probability of a recession beginning within the next 6 months — color-coded
+        so anyone can read it at a glance.
+      </p>
+
+      <table>
+        <thead><tr><th>Color</th><th>Probability</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td>Green</td><td>&lt; 25%</td><td>Economy looks healthy</td></tr>
+          <tr><td>Yellow</td><td>25–50%</td><td>Some warning signs, worth watching</td></tr>
+          <tr><td>Orange</td><td>50–75%</td><td>Significant recession risk</td></tr>
+          <tr><td>Red</td><td>&gt; 75%</td><td>Recession likely imminent</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        <strong>Why 6 months?</strong> That's the practical window for business decisions — adjusting hiring
+        plans, cutting capital expenditure, building cash reserves. Shorter lead times leave no room to act.
+        Longer lead times lose accuracy.
+      </p>
+
+      <blockquote style="border-left: 3px solid #888; padding-left: 1rem; color: #555; font-style: italic;">
+        As of August 2024, The Siren is at <strong>9.7%</strong>. [Green]
+      </blockquote>
+
+      <!-- ── 2. The Data ─────────────────────────────────────────── -->
+      <h3>2. The Data</h3>
+      <p>
+        Nine economic series covering 60+ years of US history (1960–2024), drawn from three sources: the Federal
+        Reserve (FRED), the IMF, and the OECD.
+      </p>
+
+      <table>
+        <thead><tr><th>Indicator</th><th>Type</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Yield Spread (10Y–3M)</strong></td><td>Leading</td>
+            <td>An inverted yield curve has preceded every US recession. The model's single strongest predictor.</td>
+          </tr>
+          <tr>
+            <td><strong>Building Permits</strong></td><td>Leading</td>
+            <td>New construction collapses early — leads GDP by months.</td>
+          </tr>
+          <tr>
+            <td><strong>Consumer Confidence</strong></td><td>Leading</td>
+            <td>Expectations drive spending. Pessimism becomes self-fulfilling.</td>
+          </tr>
+          <tr>
+            <td><strong>Unemployment Rate</strong></td><td>Coincident</td>
+            <td>Classic recession signal. Rises as businesses pull back.</td>
+          </tr>
+          <tr>
+            <td><strong>Industrial Production</strong></td><td>Coincident</td>
+            <td>Factory output falls before official GDP figures catch up.</td>
+          </tr>
+          <tr>
+            <td><strong>CPI Inflation</strong></td><td>Coincident</td>
+            <td>High inflation forces rate hikes that historically tip economies over.</td>
+          </tr>
+          <tr>
+            <td><strong>Real Disposable Income</strong></td><td>Coincident</td>
+            <td>If paychecks shrink in real terms, consumer spending follows.</td>
+          </tr>
+          <tr>
+            <td><strong>Prime Rate</strong></td><td>Lagging</td>
+            <td>Cost of borrowing. Rapid hikes are a known recession precursor.</td>
+          </tr>
+          <tr>
+            <td><strong>Business Inventories</strong></td><td>Lagging</td>
+            <td>Stockpile buildup signals demand fell faster than production adjusted.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        Ground truth labels come from the <strong>National Bureau of Economic Research (NBER)</strong> — the
+        official US arbiter of recession timing — pulled from FRED as a binary 0/1 series.
+      </p>
+
+      <!-- ── 3. Feature Engineering ──────────────────────────────── -->
+      <h3>3. Feature Engineering</h3>
+
+      <h4>Making the Data Stationary</h4>
+      <p>
+        Raw economic levels aren't comparable across time. A CPI reading of 300 in 2020 means something entirely
+        different from 30 in 1970. Five level series were transformed to <strong>month-over-month percentage
+        change</strong> (industrial production, CPI, real income, prime rate, business inventories). This removes
+        long-run trends and makes each series stationary — a statistical requirement for reliable time-series
+        modeling. All five passed <strong>ADF (Augmented Dickey-Fuller) tests</strong> after the transformation,
+        having failed them in levels.
+      </p>
+      <p>
+        The remaining four series (consumer confidence, unemployment, yield spread, building permits) were kept
+        as-is — they are already stationary or near-stationary in levels.
+      </p>
+
+      <h4>Yield Spread Lags</h4>
+      <p>
+        The inverted yield curve's predictive power peaks with a delay — the economy doesn't react instantly
+        to a rate inversion. Lags at <strong>3, 6, and 12 months</strong> were added as explicit features,
+        giving the model three separate windows to learn this relationship without manual feature selection.
+      </p>
+      <pre><code>Final feature set — 17 columns:
+
+  consumer_conf       unemployment        yield_spread        building_permits
+  indpro_level        cpi_inflation_level real_dpi_level      prime_rate_level
+  biz_inventories_level  indpro          cpi_inflation        real_dpi
+  prime_rate          biz_inventories     T10Y3M_lag3         T10Y3M_lag6
+  T10Y3M_lag12</code></pre>
+
+      <h4>The Prediction Target</h4>
+      <p>
+        The model predicts <code>recession_6m</code>: a binary label that is 1 if <em>any</em> of the next
+        6 months falls inside an NBER recession. This means the model predicts the probability of a recession
+        <em>starting or continuing</em> within the next half-year — not a point-in-time call. Roughly 20% of
+        historical months carry a positive label, reflecting that recessions are relatively rare.
+      </p>
+
+      <!-- ── 4. Validation Strategy ──────────────────────────────── -->
+      <h3>4. Validation Strategy</h3>
+      <p>
+        A naive train/test split on time-series data leaks the future into training. The Siren uses
+        <strong>walk-forward (expanding window) validation</strong> — the model is trained only on past data,
+        then tested on future data it has never seen:
+      </p>
+      <pre><code>[Train: 1960–1994] → 6-month gap → [Test: 1994–2004]   Fold 1
+[Train: 1960–2004] → 6-month gap → [Test: 2004–2014]   Fold 2
+[Train: 1960–2014] → 6-month gap → [Test: 2014–2024]   Fold 3</code></pre>
+      <p>
+        The <strong>6-month gap</strong> between training and testing is critical: because
+        <code>recession_6m[t]</code> encodes information from <code>recession[t+1]</code> through
+        <code>recession[t+6]</code>, removing the gap would allow the last training month's label to
+        overlap with the first test prediction — a form of data leakage that would inflate performance.
+      </p>
+      <p>
+        The expanding window (rather than a rolling window) retains all historical data. The 1960s recessions
+        are rare but valuable signal, and there's no reason to discard them when predicting the 2010s.
+      </p>
+
+      <!-- ── 5. The Model ────────────────────────────────────────── -->
+      <h3>5. The Model — XGBoost with F-Beta Threshold Optimization</h3>
+
+      <h4>Why XGBoost?</h4>
+      <p>
+        The Siren's primary model is <strong>XGBoost</strong>, a gradient-boosted decision tree algorithm.
+        It builds hundreds of shallow trees in sequence, each correcting the errors of the last. This handles
+        non-linear relationships and feature interactions well — important because economic dynamics are rarely
+        simple.
+      </p>
+      <pre><code>XGB config:
+  n_estimators: 300  |  max_depth: 4  |  learning_rate: 0.05
+  subsample: 0.8     |  colsample_bytree: 0.8
+  scale_pos_weight = neg_count / pos_count  (computed per fold)</code></pre>
+
+      <h4>Threshold Optimization</h4>
+      <p>
+        The default 0.5 threshold isn't appropriate here. A missed recession is far more costly than a false
+        alarm. The threshold was optimized per fold using <strong>F-beta with β=2</strong>, which weights
+        recall twice as heavily as precision:
+      </p>
+      <pre><code>F_β = (1 + β²) × (precision × recall) / (β² × precision + recall)
+     with β=2: recall contributes 4× more weight than precision</code></pre>
+      <p>
+        A grid search across 199 thresholds (0.01–0.99) finds the cutoff that catches the most recessions
+        even at the cost of more false alarms.
+      </p>
+
+      <h4>Performance Across 3 Folds</h4>
+      <table>
+        <thead><tr><th>Fold</th><th>Test period</th><th>AUC-ROC</th><th>Recall</th><th>Precision</th><th>F1</th><th>Threshold</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>1994–2004</td><td>0.884</td><td>0.923</td><td>0.353</td><td>0.511</td><td>0.010</td></tr>
+          <tr><td>2</td><td>2004–2014</td><td>0.852</td><td>0.826</td><td>0.528</td><td>0.644</td><td>0.059</td></tr>
+          <tr><td>3</td><td>2014–2024</td><td>0.861</td><td>1.000</td><td>0.226</td><td>0.368</td><td>0.089</td></tr>
+          <tr><td><strong>Mean</strong></td><td></td><td><strong>0.866</strong></td><td><strong>0.916</strong></td><td><strong>0.369</strong></td><td><strong>0.508</strong></td><td></td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        <strong>91.6% mean recall</strong> — fewer than 1 in 10 genuine pre-recession months missed across
+        all three test windows.
+      </p>
+
+      <figure style="margin: 1.5rem 0; text-align: center;">
+        <img src="output/siren_signal.png" alt="XGBoost walk-forward probability signal 1994–2024"
+             style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px;" />
+        <figcaption style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
+          XGBoost walk-forward probability signal, 1994–2024. Shaded bands mark NBER recession periods.
+        </figcaption>
+      </figure>
+
+      <!-- ── 6. Model Comparison ─────────────────────────────────── -->
+      <h3>6. Model Comparison</h3>
+      <p>
+        Three models were evaluated on the same walk-forward splits with identical F-beta threshold
+        optimization to test whether XGBoost's complexity was justified.
+      </p>
+
+      <table>
+        <thead><tr><th>Model</th><th>AUC-ROC</th><th>Recall</th><th>Precision</th><th>F1</th></tr></thead>
+        <tbody>
+          <tr><td>XGBoost</td><td>0.866</td><td>0.916</td><td><strong>0.369</strong></td><td>0.508</td></tr>
+          <tr><td>Random Forest</td><td>0.840</td><td>0.942</td><td>0.336</td><td>0.489</td></tr>
+          <tr><td><strong>Logistic Regression</strong></td><td><strong>0.891</strong></td><td><strong>0.986</strong></td><td>0.358</td><td><strong>0.509</strong></td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        <strong>The most important finding: Logistic Regression outperforms XGBoost on AUC, Recall, and F1.</strong>
+        This isn't a failure — it's a finding. The inverted yield curve has a fundamentally
+        <em>linear</em> relationship with recession risk. When a simpler model captures the signal just as well,
+        that simpler model is often the better choice.
+      </p>
+      <p>
+        XGBoost was kept as the primary model for two reasons: best <strong>precision</strong> (fewest false
+        alarms) and best <strong>calibrated ECE</strong> after Platt scaling — its per-bin probabilities are
+        the most trustworthy. For a warning system where false alarms erode trust, this distinction matters.
+      </p>
+
+      <figure style="margin: 1.5rem 0; text-align: center;">
+        <img src="output/compare_signals.png" alt="Calibrated probability signals for all 3 models"
+             style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px;" />
+        <figcaption style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
+          Calibrated probability signals for all three models across the test period.
+        </figcaption>
+      </figure>
+
+      <figure style="margin: 1.5rem 0; text-align: center;">
+        <img src="output/compare_summary.png" alt="Mean metric bar chart across all 3 models"
+             style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px;" />
+        <figcaption style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
+          Mean AUC-ROC, Recall, Precision, and F1 across all three folds for each model.
+        </figcaption>
+      </figure>
+
+      <!-- ── 7. Calibration ─────────────────────────────────────── -->
+      <h3>7. Calibration — Are the Probabilities Trustworthy?</h3>
+      <p>
+        A model that says "70% recession risk" should be right about 70% of the time in similar situations.
+        If it's only right 30% of the time, the probability isn't calibrated and shouldn't be used as a
+        literal forecast. This is measured with <strong>Expected Calibration Error (ECE)</strong> — lower
+        is better.
+      </p>
+      <p>
+        Each model received its own independent <strong>Platt scaler</strong> — a logistic regression
+        fitted on the model's raw probability outputs using folds 1+2, then evaluated on fold 3. Applying
+        one model's calibrator to another's output would be invalid because each model's probability
+        distribution is fundamentally different.
+      </p>
+
+      <table>
+        <thead><tr><th>Model</th><th>ECE before</th><th>ECE after</th><th>Brier before</th><th>Brier after</th></tr></thead>
+        <tbody>
+          <tr><td>XGBoost</td><td>0.160</td><td><strong>0.118</strong></td><td>0.124</td><td>0.071</td></tr>
+          <tr><td>Random Forest</td><td>0.222</td><td>0.175</td><td>0.126</td><td>0.089</td></tr>
+          <tr><td>Logistic Regression</td><td>0.315</td><td>0.137</td><td>0.262</td><td><strong>0.060</strong></td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        All three models improved after Platt scaling. Logistic Regression had the worst raw calibration
+        (it produces very extreme probabilities near 0 and 1) but after calibration it achieves the best
+        Brier score (0.060). XGBoost achieves the best calibrated ECE (0.118) — its probability buckets
+        are the most reliable. A naive "always predict base rate" model scores ~0.146 on the Brier metric;
+        all three models beat that comfortably.
+      </p>
+
+      <figure style="margin: 1.5rem 0; text-align: center;">
+        <img src="output/calibration.png" alt="XGBoost reliability diagram and prediction distribution"
+             style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px;" />
+        <figcaption style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
+          XGBoost reliability diagram before and after Platt scaling, with prediction distribution.
+          Points closer to the diagonal indicate better-calibrated probabilities.
+        </figcaption>
+      </figure>
+
+      <figure style="margin: 1.5rem 0; text-align: center;">
+        <img src="output/compare_calibration.png" alt="ECE and Brier score before/after Platt scaling per model"
+             style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px;" />
+        <figcaption style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
+          ECE and Brier score before and after Platt scaling for all three models.
+        </figcaption>
+      </figure>
+
+      <!-- ── 8. Did It Catch Every Recession? ───────────────────── -->
+      <h3>8. Did It Catch Every Recession?</h3>
+
+      <h4>Out-of-Sample Results (the only fair evaluation)</h4>
+      <table>
+        <thead><tr><th>Recession</th><th>First alarm</th><th>Lead time</th><th>Peak probability</th></tr></thead>
+        <tbody>
+          <tr><td>Dot-com / 9-11 (2001)</td><td>Oct 2000</td><td>6 months</td><td>30.1%</td></tr>
+          <tr><td>Great Recession (2008)</td><td>Jul 2007</td><td>6 months</td><td><strong>99.8%</strong></td></tr>
+          <tr><td>COVID-19 (2020)</td><td>Sep 2019</td><td>6 months</td><td>76.8%</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        <strong>3 out of 3. Every out-of-sample recession caught with a full 6 months of lead time.</strong>
+      </p>
+
+      <h4>The Two Interesting Cases</h4>
+      <p>
+        <strong>2001 — peak 30.1%:</strong> The recession formed gradually as the dot-com bubble deflated
+        through 2000. Then 9/11 hit as an external shock — impossible to read from macro indicators. The
+        model correctly detected the pre-existing macro weakness and fired at 30%. It cannot predict
+        terrorist attacks, nor should it be expected to.
+      </p>
+      <p>
+        <strong>2020 — peak 76.8%:</strong> The alarm fired in September 2019, six months before COVID.
+        The signal came from the inverted yield curve, which had been flashing red since mid-2019 due to
+        Fed policy and trade war uncertainty. COVID exploited the economic vulnerability the model was
+        already reading.
+      </p>
+      <blockquote style="border-left: 3px solid #888; padding-left: 1rem; color: #555; font-style: italic;">
+        The Siren reads economic vulnerability, not the unpredictable events that exploit it.
+        That is exactly what an early-warning system should do.
+      </blockquote>
+
+      <h4>False Alarm Rate</h4>
+      <p>
+        63 false alarms out of 317 non-recession test months — a <strong>19.9% false alarm rate</strong>.
+        Expect roughly one spurious signal every 5 calm months. This is the deliberate cost of
+        catching 91.6% of pre-recession months. The threshold was tuned to accept this tradeoff explicitly
+        via F-beta (β=2).
+      </p>
+
+      <!-- ── 9. Explainability ───────────────────────────────────── -->
+      <h3>9. Explainability — Why Is the Siren at X%?</h3>
+      <p>
+        A probability is only useful if you can explain it. The Siren uses <strong>SHAP</strong>
+        (SHapley Additive exPlanations) to decompose every prediction into the contribution of each feature.
+        SHAP goes beyond feature importance rankings — it shows the directional, per-prediction contribution
+        of each feature in the units of the model output.
+      </p>
+
+      <h4>Global Importance (2019–2024)</h4>
+      <figure style="margin: 1.5rem 0; text-align: center;">
+        <img src="output/shap_summary.png" alt="Top-10 SHAP feature importances (2019–2024)"
+             style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px;" />
+        <figcaption style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
+          Top-10 features by mean absolute SHAP value across the most recent 5-year window.
+          The yield spread and its lags dominate, consistent with Logistic Regression's strong performance.
+        </figcaption>
+      </figure>
+
+      <h4>Why Is It 9.7% Right Now? (August 2024)</h4>
+      <figure style="margin: 1.5rem 0; text-align: center;">
+        <img src="output/shap_latest_month.png" alt="SHAP waterfall for August 2024"
+             style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px;" />
+        <figcaption style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
+          Feature-level explanation for the August 2024 reading. Red bars push probability up;
+          blue bars push it down. The cumulative sum arrives at the final 9.7%.
+        </figcaption>
+      </figure>
+
+      <!-- ── 10. Limitations ────────────────────────────────────── -->
+      <h3>10. Limitations</h3>
+      <ul>
+        <li>
+          <strong>Exogenous shocks are invisible.</strong> Pandemics, wars, and financial fraud don't
+          appear in macro data before they strike. The model reads economic vulnerability, not the events
+          that exploit it.
+        </li>
+        <li>
+          <strong>Small out-of-sample test set.</strong> Three recessions in 30 years is thin. With n=3,
+          results could partly reflect luck — error bars are wide.
+        </li>
+        <li>
+          <strong>No hyperparameter tuning.</strong> XGBoost parameters were set by hand. A grid search
+          within each fold could improve performance further.
+        </li>
+        <li>
+          <strong>Calibration is imperfect.</strong> ECE of 0.118 after Platt scaling is better than raw
+          but not perfect. Treat probabilities as ranking signals rather than literal forecasts.
+        </li>
+        <li>
+          <strong>Data vintage.</strong> NBER recession labels are announced months after the fact. In live
+          deployment, the most recent months would carry uncertain labels.
+        </li>
+          <li>
+          <strong>Data vintage.</strong> NBER recession labels are announced months after the fact. In live
+          deployment, the most recent months would carry uncertain labels.
+        </li>
+        <li>
+          <strong>The output is a signal, not a verdict — and wide distribution creates a causation risk.</strong>
+          If The Siren were broadly published and acted upon at scale, it could become part of the very
+          mechanism it is trying to detect. A widely circulated "75% recession probability" triggers
+          precautionary spending cuts, hiring freezes, and capital flight — each of which depresses the
+          economy independently of whatever the underlying indicators were actually saying. The model
+          would stop being a passive observer and start being a cause. This is the economic equivalent
+          of a fire alarm that starts fires: the prediction accelerates the outcome it predicts. The
+          Siren should be used as one private input into a decision, not broadcast as a public forecast.
+        </li>
+      </ul>
+
+      <!-- ── 11. Key Findings ───────────────────────────────────── -->
+      <h3>11. Key Findings</h3>
+      <table>
+        <thead><tr><th>What we built</th><th>Why it holds up</th></tr></thead>
+        <tbody>
+          <tr><td>9-feature, 60-year economic dataset</td><td>Covers every US recession since 1960</td></tr>
+          <tr><td>3-model comparison (XGBoost, RF, LR)</td><td>Logistic Regression competitive — complexity not always necessary</td></tr>
+          <tr><td>Per-model independent Platt scaling</td><td>Honest calibration — each model on its own probability distribution</td></tr>
+          <tr><td>Walk-forward validation with 6-month gap</td><td>No data leakage, mirrors real-world use</td></tr>
+          <tr><td>F-beta (β=2) threshold optimization</td><td>Business logic baked into the objective function</td></tr>
+          <tr><td>SHAP explainability</td><td>Every reading can be explained in plain English</td></tr>
+          <tr><td>3/3 out-of-sample recessions caught</td><td>6 months of lead time on every one</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        The most important finding isn't the AUC score. It's that a simple linear model matches a complex
+        tree model on this problem — because the yield curve's relationship to recessions is fundamentally
+        linear. A rigorous evaluation surfaces that insight rather than hiding it behind complexity.
+      </p>
+
+    </article>
+  </div>
+
+  <footer>
+    <p>
+      © 2026 Toan Nguyen &nbsp;·&nbsp;
+      <a href="https://github.com/ericnguyen58" target="_blank" rel="noopener">GitHub</a>
+    </p>
+  </footer>
+
+</body>
+</html>
